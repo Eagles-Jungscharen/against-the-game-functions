@@ -77,6 +77,31 @@ namespace EaglesJungscharen.ATG
             }
             return new OkObjectResult(game);
         }
+        [FunctionName("SaveGame")]
+        public static async Task<IActionResult> SaveGame(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "game/{id}")] HttpRequest req,
+            ILogger log, string id, [Table("GameRegistry")] CloudTable table, [Table("Game")] CloudTable gameTable)
+        {
+            if (!req.Headers.ContainsKey("game-sec")) {
+                return new UnauthorizedResult();
+            }
+            string secureId = req.Headers["game-sec"];
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            Game inputGame = JsonConvert.DeserializeObject<Game>(requestBody);
+
+            GameRegistry regEntry = await table.GetByIdAsync<GameRegistry>(inputGame.Number, "GameRegistry");
+            if (secureId != regEntry.Verification) {
+                return new UnauthorizedResult();
+            }
+
+            Game game = await gameTable.GetByIdAsync<Game>(id,"Game");
+            if (game == null) {
+                return new NotFoundResult();
+            }
+            game.Update(inputGame);
+            await gameTable.InsertOrReplaceAsync(id,"Game",game);
+            return new OkObjectResult(game);
+        }
         [FunctionName("CheckEditGame")]
         public static async Task<IActionResult> CheckEditGame(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "checkeditgame")] HttpRequest req,
