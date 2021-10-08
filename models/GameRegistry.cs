@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 namespace EaglesJungscharen.ATG.Models{
     public class GameRegistry {
         public string Code {set;get;}
@@ -30,6 +31,11 @@ namespace EaglesJungscharen.ATG.Models{
     }
 
     public class TaskElement {
-
+        public string Id {set;get;}
+        public int No {set;get;}
+        public string Name {set;get;}
+        public bool Started {set;get;}
+        public bool Done {set;get;}
+        public DateTime EndTime {set;get;}
     }
 }

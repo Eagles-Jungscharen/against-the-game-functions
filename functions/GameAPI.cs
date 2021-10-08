@@ -137,5 +137,40 @@ namespace EaglesJungscharen.ATG
                 GameId = regEntry.GameId
             });
         }
+
+        [FunctionName("GetTaskElements")]
+        public static async Task<IActionResult> GetTaskElements(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "taskelements")] HttpRequest req,
+            ILogger log,[Table("TaskElements")] CloudTable table)
+        {
+            string gameId = req.Query["gameId"];
+            List<TaskElement> elements = await table.GetAllAsync<TaskElement>(gameId);
+            return new OkObjectResult(elements);
+        }
+        [FunctionName("SaveTaskElements")]
+        public static async Task<IActionResult> SaveTaskElements(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "taskelements")] HttpRequest req,
+            ILogger log,[Table("TaskElements")] CloudTable table, [Table("GameRegistry")] CloudTable regTable, [Table("Game")] CloudTable gameTable)
+        {
+            string secureId = req.Headers["game-sec"];
+            string gameId = req.Query["gameId"];
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            TaskElement data = JsonConvert.DeserializeObject<TaskElement>(requestBody);
+
+            Game game = await gameTable.GetByIdAsync<Game>(gameId,"Game");
+            GameRegistry regEntry = await regTable.GetByIdAsync<GameRegistry>(game.Number, "GameRegistry");
+            if (regEntry == null) {
+                return new NotFoundResult();
+            }
+            if (regEntry.Verification != secureId) {
+                return new UnauthorizedResult();
+            }
+            if (data.Id =="@new") {
+                data.Id = Guid.NewGuid().ToString();
+            }
+            await table.InsertOrReplaceAsync(data.Id, gameId, data);
+            return new OkObjectResult(data);
+        }
+
     }
 }
