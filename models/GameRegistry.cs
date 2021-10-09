@@ -36,6 +36,6 @@ namespace EaglesJungscharen.ATG.Models{
         public string Name {set;get;}
         public bool Started {set;get;}
         public bool Done {set;get;}
-        public DateTime EndTime {set;get;}
+        public DateTime? EndTime {set;get;}
     }
 }
