@@ -20,22 +20,25 @@ namespace EaglesJungscharen.ATG
     {
         [FunctionName("StartGame")]
         public static async Task<IActionResult> StartGame(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "game/{id}/start")] HttpRequest req,
-            ILogger log)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "game/{id}/run")] HttpRequest req,
+            ILogger log, string id, [Table("Game")] CloudTable gameTable, [Table("TaskElements")] CloudTable teTable,[Table("GameRun")] CloudTable gameRunTable, [Table("TaskElementsRun")] CloudTable teRunTable)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
-
-            string name = req.Query["name"];
-
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
-
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
-
-            return new OkObjectResult(responseMessage);
+            
+            string action = req.Query["action"];
+            string clientRunnerId = req.Headers["runnerClientId"];
+            switch(action) {
+                case "start":
+                    return await RunAPI.StartGame(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "stop":
+                    return await RunAPI.EndGame(id, clientRunnerId, gameRunTable);
+                case "taskfinished":
+                    return await RunAPI.FinishTask(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "status":
+                    return await RunAPI.GameStatus(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                default:
+                    return new BadRequestResult();
+            }
         }
         [FunctionName("NewGame")]
         public static async Task<IActionResult> NewGame(
