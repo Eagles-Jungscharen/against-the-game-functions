@@ -29,6 +29,7 @@ namespace EaglesJungscharen.ATG.Models{
             this.PlayerTeamName = inputGame.PlayerTeamName;
             this.PlayerTeamPoints = inputGame.PlayerTeamPoints;
             this.TaskPoints = inputGame.TaskPoints;
+            this.TaskDuration = inputGame.TaskDuration;
         }
     }
 
@@ -58,14 +59,15 @@ namespace EaglesJungscharen.ATG.Models{
         public DateTime? StartAt {set;get;}
         public DateTime? LastTaskAt {set;get;}
         public string RunnerClientId {set;get;}
+        public int RestartPoint {set;get;}
         public void Update(RunGame rg, DateTime lastTaskAt) {
             this.Status = rg.Status;
             this.StartAt = rg.StartAt;
             this.LastTaskAt = lastTaskAt;
         }
         public RunGame GetRunGame(Game game, List<RunTaskElement> taskElements) {
-            int pointComputer = taskElements.Sum(te=>te.Status == "WIN_COMPUTER"?game.TaskPoints:0);
-            int pointPlayer = taskElements.Sum(te=>te.Status == "WIN_PLAYER"?game.TaskPoints:0);
+            int pointComputer = taskElements.Sum(te=>te.Status == "lost"?game.TaskPoints:0);
+            int pointPlayer = taskElements.Sum(te=>te.Status == "won"?game.TaskPoints:0);
             
             return new RunGame() {
                 Id = this.Id,

@@ -30,10 +30,22 @@ namespace EaglesJungscharen.ATG
             switch(action) {
                 case "start":
                     return await RunAPI.StartGame(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
-                case "stop":
-                    return await RunAPI.EndGame(id, clientRunnerId, gameRunTable);
-                case "taskfinished":
-                    return await RunAPI.FinishTask(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "end":
+                    return await RunAPI.EndGame(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "pause":
+                    return await RunAPI.PauseGame(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "reset":
+                    return await RunAPI.ResetGame(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "assignTask":
+                    string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                    dynamic taskIdBody = JsonConvert.DeserializeObject(requestBody);
+                    string taskId = taskIdBody.taskId;
+                    return await RunAPI.AssignTask(id, taskId,clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
+                case "completeTask":
+                    string requestBodyCT = await new StreamReader(req.Body).ReadToEndAsync();
+                    dynamic taskIdBodyCT = JsonConvert.DeserializeObject(requestBodyCT);
+                    string taskIdCT = taskIdBodyCT.taskId;
+                    return await RunAPI.FinishTask(id, taskIdCT, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
                 case "status":
                     return await RunAPI.GameStatus(id, clientRunnerId, gameTable, teTable, gameRunTable, teRunTable);
                 default:
