@@ -19,8 +19,8 @@ namespace EaglesJungscharen.ATG {
             Game game = await gameTable.GetByIdAsync<Game>(gameId,"Game");
             List<TaskElement> elements = await teTable.GetAllAsync<TaskElement>(gameId);
             RunGameSE rgs = await gameRunTable.GetByIdAsync<RunGameSE>(gameId, "RunGame");
-            bool isPause = rgs.Status == "paused";
-            int pauseInSeconds = isPause && rgs.StartAt.HasValue? Convert.ToInt32((DateTime.Now- rgs.StartAt.Value).TotalSeconds):0;
+            bool isPause = rgs != null && rgs.Status == "paused";
+            int pauseInSeconds = isPause && rgs!= null && rgs.StartAt.HasValue ? Convert.ToInt32((DateTime.Now- rgs.StartAt.Value).TotalSeconds):0;
             if (rgs == null) {
                 rgs =new RunGameSE() {
                     Id = gameId,
@@ -36,7 +36,6 @@ namespace EaglesJungscharen.ATG {
             //}
             //rgs.RunnerClientId = clientRunnerId;
             rgs.Status = "running";
-            await gameRunTable.InsertOrReplaceAsync(gameId,"RunGame", rgs);
             List<RunTaskElementSE> rte = await teRunTable.GetAllAsync<RunTaskElementSE>(gameId);
             List<TaskElement> listRTE = elements.Where(element=>rte.Find(cRTE=>cRTE.Id ==element.Id)==null).ToList();
             List<RunTaskElementSE> newRTE = listRTE.Select(newRTE=>{
@@ -67,6 +66,7 @@ namespace EaglesJungscharen.ATG {
 
                 });
             }
+            await gameRunTable.InsertOrReplaceAsync(gameId,"RunGame", rgs);
             return new OkObjectResult(await BuildGameStatus(gameId,gameTable,teTable,gameRunTable,teRunTable));
         }
 
@@ -101,7 +101,7 @@ namespace EaglesJungscharen.ATG {
             if (rgs.StartAt.HasValue) {
                 DateTime startAt = rgs.StartAt.Value;
                 int mustRun = Convert.ToInt32(Math.Floor((DateTime.Now - startAt).TotalSeconds / game.Interval));
-                rgs.RestartPoint =mustRun;
+                rgs.RestartPoint =rgs.RestartPoint> 0? rgs.RestartPoint +mustRun: mustRun;
                 rgs.StartAt = DateTime.Now;
             }  
             await gameRunTable.InsertOrReplaceAsync(id,"RunGame", rgs);
@@ -170,12 +170,12 @@ namespace EaglesJungscharen.ATG {
                 if (runGame.CurrentPointsComputer <= 0) {
                     rgs.Status = "won";
                     runGame.Status = "won";
-                    await teRunTable.InsertOrReplaceAsync(rgs.Id, "RunGame", rgs);
+                    await gameRunTable.InsertOrReplaceAsync(rgs.Id, "RunGame", rgs);
                 }
                 if (runGame.CurrentPointsPlayer <=0 ) {
                     rgs.Status = "lost";
                     runGame.Status = "lost";
-                    await teRunTable.InsertOrReplaceAsync(rgs.Id, "RunGame", rgs);
+                    await gameRunTable.InsertOrReplaceAsync(rgs.Id, "RunGame", rgs);
                 }
             }
             return runGame;
